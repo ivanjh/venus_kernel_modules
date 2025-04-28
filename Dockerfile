@@ -1,7 +1,7 @@
 ARG VENUS_VERSION
 ARG GITHUB_REPOSITORY
 
-FROM ubuntu:22.04 AS SDK
+FROM ubuntu:22.04 AS sdk
 ARG VENUS_VERSION
 RUN apt-get update
 RUN apt-get --no-install-recommends -y install make git ca-certificates sudo
