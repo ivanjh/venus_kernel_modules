@@ -1,5 +1,4 @@
 ARG VENUS_VERSION
-ARG GITHUB_TOKEN
 ARG GITHUB_REPOSITORY
 
 FROM ubuntu:22.04 AS SDK
@@ -63,9 +62,8 @@ RUN git config --global user.email "build@local"
 RUN git config --global user.name "build"
 
 ARG GITHUB_REPOSITORY
-ARG GITHUB_TOKEN
 
-RUN cd /repos/venus/build/tmp-glibc/work/einstein-ve-linux-gnueabi/linux-venus/*-venus-*/deploy-ipks/einstein/ && \
+RUN --mount=type=secret,id=github_token,env=GITHUB_TOKEN cd /repos/venus/build/tmp-glibc/work/einstein-ve-linux-gnueabi/linux-venus/*-venus-*/deploy-ipks/einstein/ && \
     git init . && \
     git remote add origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY} && \
     git add -A && git commit -m "Publish" && \

@@ -23,5 +23,6 @@ jobs:
         tags: user/app:latest
         build-args: |
           VENUS_VERSION=${{ github.event.inputs.venus_tag }}
-          GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY=${{ github.repository }}
+        secrets: |
+          github_token=${{ secrets.GITHUB_TOKEN }}
