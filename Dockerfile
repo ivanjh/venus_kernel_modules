@@ -6,7 +6,11 @@ ARG VENUS_VERSION
 RUN apt-get update
 RUN apt-get --no-install-recommends -y install make git ca-certificates sudo
 
+RUN useradd -ms /bin/bash builduser
 RUN mkdir /repos/
+RUN chown builduser:builduser /repos
+
+USER builduser
 WORKDIR /repos/
 RUN git clone --depth=1 https://github.com/victronenergy/venus.git -b ${VENUS_VERSION}
 WORKDIR /repos/venus
@@ -17,8 +21,10 @@ RUN for conf in $(find configs -name repos.conf); do awk -v branch=${VENUS_VERSI
 # We're running as root, with no sudo
 RUN sed -i -e 's/@sudo //g' Makefile
 
+USER root
 RUN echo "APT::Get::Assume-Yes \"true\";\nAPT::Get::allow \"true\";" | sudo tee -a  /etc/apt/apt.conf.d/90_no_prompt
 RUN DEBIAN_FRONTEND=noninteractive make prereq
+USER builduser
 
 # ssh requires key for public read, so switch github to https
 RUN git config --global url.https://github.com/.insteadOf git@github.com:
@@ -29,7 +35,9 @@ RUN git config --global advice.detachedHead "false"
 RUN make fetch
 
 # Image build checks for it
+USER root
 RUN apt-get --no-install-recommends -y install cpio
+USER builduser
 
 # Avoid "don't use bitbake as root" error
 RUN touch build/conf/sanity.conf
@@ -42,7 +50,9 @@ ENV MACHINES="einstein cerbosgx nanopi ekrano raspberrypi2 raspberrypi4 beaglebo
 ENV MACHINES_LARGE="einstein cerbosgx nanopi ekrano raspberrypi2 raspberrypi4 beaglebone"
 
 # bitbake default requires en_US.UTF-8
+USER root
 RUN apt-get --no-install-recommends -y install language-pack-en
+USER builduser
 
 # Enable not already static kernel options as modules
 RUN >>"$(find sources/meta-victronenergy/meta-bsp/recipes-kernel/linux -name 'linux-venus*.bb')" echo 'do_configure:append() { \n\
@@ -62,7 +72,9 @@ RUN >>"$(find sources/meta-victronenergy/meta-bsp/recipes-kernel/linux -name 'li
 }'
 
 # bitbake requires lz4c pzstd unzstd zstd
+USER root
 RUN apt-get --no-install-recommends -y install lz4 zstd
+USER builduser
 
 # Avoid git "detected dubious ownership in repository" for /repos/venus/build/tmp-glibc/work/x86_64-linux/binutils-cross-arm/2.42/git
 RUN git config --global --add safe.directory '*'
