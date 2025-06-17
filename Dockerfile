@@ -23,6 +23,9 @@ RUN DEBIAN_FRONTEND=noninteractive make prereq
 # ssh requires key for public read, so switch github to https
 RUN git config --global url.https://github.com/.insteadOf git@github.com:
 
+# Avoid detach of HEAD messages during fetch
+RUN git config --global advice.detachedHead "false"
+
 RUN make fetch
 
 # Image build checks for it
