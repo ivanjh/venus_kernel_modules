@@ -61,6 +61,9 @@ RUN >>"$(find sources/meta-victronenergy/meta-bsp/recipes-kernel/linux -name 'li
     <.config.nonstaticmod grep -v -F CONFIG_SERIAL_8250 | grep -v -F CONFIG_UBIFS_FS | grep -v -F CONFIG_EXT2_FS >> .config \n\
 }'
 
+# bitbake requires lz4c pzstd unzstd zstd
+RUN apt-get --no-install-recommends -y install lz4 zstd
+
 RUN /bin/bash -c '. ./sources/openembedded-core/oe-init-build-env build sources/bitbake && bitbake linux-venus'
 
 # Publish
