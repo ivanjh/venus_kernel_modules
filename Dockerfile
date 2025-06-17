@@ -41,6 +41,9 @@ ENV CONFIG=dunfell
 ENV MACHINES="einstein cerbosgx nanopi ekrano raspberrypi2 raspberrypi4 beaglebone ccgx canvu500"
 ENV MACHINES_LARGE="einstein cerbosgx nanopi ekrano raspberrypi2 raspberrypi4 beaglebone"
 
+# bitbake default requires en_US.UTF-8
+RUN apt-get --no-install-recommends -y install language-pack-en
+
 # Enable not already static kernel options as modules
 RUN >>sources/meta-victronenergy/meta-bsp/recipes-kernel/linux/linux-venus.bb echo 'do_configure:append() { \n\
     # Backup config, create all mod config, restore config \n\
