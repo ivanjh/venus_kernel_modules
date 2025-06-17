@@ -45,7 +45,7 @@ ENV MACHINES_LARGE="einstein cerbosgx nanopi ekrano raspberrypi2 raspberrypi4 be
 RUN apt-get --no-install-recommends -y install language-pack-en
 
 # Enable not already static kernel options as modules
-RUN >>sources/meta-victronenergy/meta-bsp/recipes-kernel/linux/linux-venus.bb echo 'do_configure:append() { \n\
+RUN >>"$(find sources/meta-victronenergy/meta-bsp/recipes-kernel/linux -name 'linux-venus*.bb')" echo 'do_configure:append() { \n\
     # Backup config, create all mod config, restore config \n\
     cp .config .config.premod \n\
     oe_runmake allmodconfig \n\
