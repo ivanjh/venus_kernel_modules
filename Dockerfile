@@ -64,6 +64,9 @@ RUN >>"$(find sources/meta-victronenergy/meta-bsp/recipes-kernel/linux -name 'li
 # bitbake requires lz4c pzstd unzstd zstd
 RUN apt-get --no-install-recommends -y install lz4 zstd
 
+# Avoid git "detected dubious ownership in repository" for /repos/venus/build/tmp-glibc/work/x86_64-linux/binutils-cross-arm/2.42/git
+RUN git config --global --add safe.directory '*'
+
 RUN /bin/bash -c '. ./sources/openembedded-core/oe-init-build-env build sources/bitbake && bitbake linux-venus'
 
 # Publish
