@@ -6,53 +6,53 @@ ARG VENUS_VERSION
 RUN apt-get update
 RUN apt-get --no-install-recommends -y install make git ca-certificates sudo
 
+RUN mkdir /repos
+RUN chmod o=+r+w+x /repos
+WORKDIR /repos
+
 RUN useradd -ms /bin/bash builduser
-RUN mkdir /repos/
-RUN chown builduser:builduser /repos
-
+RUN adduser builduser sudo
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER builduser
-WORKDIR /repos/
-RUN git clone --depth=1 https://github.com/victronenergy/venus.git -b ${VENUS_VERSION}
-WORKDIR /repos/venus
-
-# Set to use tag in source repos
-RUN for conf in $(find configs -name repos.conf); do awk -v branch=${VENUS_VERSION} '{$5=branch}1' $conf > tmp && mv tmp $conf ; done
-
-# We're running as root, with no sudo
-RUN sed -i -e 's/@sudo //g' Makefile
-
-USER root
-RUN echo "APT::Get::Assume-Yes \"true\";\nAPT::Get::allow \"true\";" | sudo tee -a  /etc/apt/apt.conf.d/90_no_prompt
-RUN DEBIAN_FRONTEND=noninteractive make prereq
-USER builduser
-
-# ssh requires key for public read, so switch github to https
-RUN git config --global url.https://github.com/.insteadOf git@github.com:
 
 # Avoid detach of HEAD messages during fetch
 RUN git config --global advice.detachedHead "false"
 
+# ssh requires key for public read, so switch github to https
+RUN git config --global url.https://github.com/.insteadOf git@github.com:
+
+RUN git clone --depth=1 https://github.com/victronenergy/venus.git -b ${VENUS_VERSION}
+WORKDIR /repos/venus
+
+# Update repos to checkout from matching tag in source repos
+RUN for conf in $(find configs -name repos.conf); do awk -v branch=${VENUS_VERSION} '{$5=branch}1' ${conf} > ${conf}.patched && mv ${conf} ${conf}.org && mv ${conf}.patched ${conf} ; done
+
+ENV MACHINE=einstein
+ENV SHELL=bash
+# Use default from Makefile # dunfell/scarthgap (yocto release codename)
+# ENV CONFIG=dunfell 
+ENV MACHINES="einstein cerbosgx nanopi ekrano raspberrypi2 raspberrypi4 beaglebone ccgx canvu500"
+ENV MACHINES_LARGE="einstein cerbosgx nanopi ekrano raspberrypi2 raspberrypi4 beaglebone"
+
+RUN echo "APT::Get::Assume-Yes \"true\";\nAPT::Get::allow \"true\";" | sudo tee -a /etc/apt/apt.conf.d/90_no_prompt > /dev/null
+# Include DEBIAN_FRONTEND=noninteractive for apt-get
+RUN sed -i -e 's/@sudo /@sudo DEBIAN_FRONTEND=noninteractive /g' Makefile
+RUN make prereq
+
+# Patch git-fetch-remote.sh to exit on error
+RUN sed -i '2i set -e' git-fetch-remote.sh
+
 RUN make fetch
 
 # Image build checks for it
-USER root
-RUN apt-get --no-install-recommends -y install cpio
-USER builduser
+RUN sudo DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install cpio
 
 # Avoid "don't use bitbake as root" error
 RUN touch build/conf/sanity.conf
 RUN make build/conf/bblayers.conf
 
-ENV MACHINE=einstein
-ENV SHELL=bash
-ENV CONFIG=dunfell
-ENV MACHINES="einstein cerbosgx nanopi ekrano raspberrypi2 raspberrypi4 beaglebone ccgx canvu500"
-ENV MACHINES_LARGE="einstein cerbosgx nanopi ekrano raspberrypi2 raspberrypi4 beaglebone"
-
 # bitbake default requires en_US.UTF-8
-USER root
-RUN apt-get --no-install-recommends -y install language-pack-en
-USER builduser
+RUN sudo DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install language-pack-en
 
 # Enable not already static kernel options as modules
 RUN >>"$(find sources/meta-victronenergy/meta-bsp/recipes-kernel/linux -name 'linux-venus*.bb')" echo 'do_configure:append() { \n\
@@ -72,9 +72,7 @@ RUN >>"$(find sources/meta-victronenergy/meta-bsp/recipes-kernel/linux -name 'li
 }'
 
 # bitbake requires lz4c pzstd unzstd zstd
-USER root
-RUN apt-get --no-install-recommends -y install lz4 zstd
-USER builduser
+RUN sudo DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install lz4 zstd
 
 # Avoid git "detected dubious ownership in repository" for /repos/venus/build/tmp-glibc/work/x86_64-linux/binutils-cross-arm/2.42/git
 RUN git config --global --add safe.directory '*'
