@@ -23,4 +23,4 @@ jobs:
           gh workflow --repo $GITHUB_REPOSITORY run build.yml -f venus_tag=$LINE
         done < <(comm -13 \
           <(git ls-remote --heads https://github.com/$GITHUB_REPOSITORY.git 'refs/heads/v*' | cut -f2 | cut -d/ -f3 | sort) \
-          <(git ls-remote --tags https://github.com/victronenergy/venus.git 'refs/tags/v*' | cut -f2 | cut -d/ -f3 | grep -v 'v[12]\.'| sort))
+          <(git ls-remote --tags https://github.com/victronenergy/venus.git 'refs/tags/v*' | cut -f2 | cut -d/ -f3 | grep -v 'v[12]\.'|  grep -vF 'v3.61' | sort))
