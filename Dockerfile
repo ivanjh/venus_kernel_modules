@@ -42,6 +42,9 @@ RUN make prereq
 # Patch git-fetch-remote.sh to exit on error
 RUN sed -i '2i set -e' git-fetch-remote.sh
 
+# Skip set upstream origin branch (we're using tags)
+RUN sed -i -e '/branch -u "origin/d' git-fetch-remote.sh
+
 RUN make fetch
 
 # Image build checks for it
