@@ -7,28 +7,27 @@ on:
 
 jobs:
   build:
-    permissions: 
+    permissions:
       actions: write
       contents: write
     runs-on: ubuntu-latest
     steps:
-    -
-      name: Discover
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        gh workflow --repo $GITHUB_REPOSITORY enable scan.yml
-        while read LINE; do
-          echo "Missing branch for source tag $LINE. Triggering build."
-          gh workflow --repo $GITHUB_REPOSITORY run build.yml -f venus_tag=$LINE
-        done < <(comm -13 \
-          <(git ls-remote --heads https://github.com/$GITHUB_REPOSITORY.git 'refs/heads/v*' | cut -f2 | cut -d/ -f3 | sort) \
-          <(git ls-remote --tags https://github.com/victronenergy/venus.git 'refs/tags/v*' | cut -f2 | cut -d/ -f3 | grep -v 'v[12]\.'|  grep -vF 'v3.61' | sort))
-        
-        gh --limit 1000 run list --repo $GITHUB_REPOSITORY --json databaseId,name,conclusion \
-          --jq '.[] | select(.name=="Scan" and .conclusion=="success") | .databaseId' | \
-          xargs -I '{}' gh run delete --repo $GITHUB_REPOSITORY '{}'
-        
-        gh --limit 1000 run list --repo ivanjh/venus_kernel_modules --json databaseId,name,conclusion,updatedAt \
-          --jq '.[] | select(.name=="Build" and .conclusion=="failure") | select (now-(.updatedAt|fromdate)>60*60*24*3 ) | .databaseId' | \
-          xargs -I '{}' gh run delete --repo $GITHUB_REPOSITORY '{}'
+      - name: Discover
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow --repo $GITHUB_REPOSITORY enable scan.yml
+          while read LINE; do
+            echo "Missing branch for source tag $LINE. Triggering build."
+            gh workflow --repo $GITHUB_REPOSITORY run build.yml -f venus_tag=$LINE
+          done < <(comm -13 \
+            <(git ls-remote --heads https://github.com/$GITHUB_REPOSITORY.git 'refs/heads/v*' | cut -f2 | cut -d/ -f3 | sort) \
+            <(git ls-remote --tags https://github.com/victronenergy/venus.git 'refs/tags/v*' | cut -f2 | cut -d/ -f3 | grep -v 'v[12]\.'|  grep -vF 'v3.61' | sort))
+
+          gh --limit 1000 run list --repo $GITHUB_REPOSITORY --json databaseId,name,conclusion \
+            --jq '.[] | select(.name=="Scan" and .conclusion=="success") | .databaseId' | \
+            xargs -I '{}' gh run delete --repo $GITHUB_REPOSITORY '{}'
+
+          gh --limit 1000 run list --repo ivanjh/venus_kernel_modules --json databaseId,name,conclusion,updatedAt \
+            --jq '.[] | select(.name=="Build" and .conclusion=="failure") | select (now-(.updatedAt|fromdate)>60*60*24*3 ) | .databaseId' | \
+            xargs -I '{}' gh run delete --repo $GITHUB_REPOSITORY '{}'
