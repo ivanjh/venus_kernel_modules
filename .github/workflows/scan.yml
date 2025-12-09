@@ -23,11 +23,17 @@ jobs:
           done < <(comm -13 \
             <(git ls-remote --heads https://github.com/$GITHUB_REPOSITORY.git 'refs/heads/v*' | cut -f2 | cut -d/ -f3 | sort) \
             <(git ls-remote --tags https://github.com/victronenergy/venus.git 'refs/tags/v*' | cut -f2 | cut -d/ -f3 | grep -v 'v[12]\.'|  grep -vF 'v3.61' | sort))
-
+      - name: Action Run Tidy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "::group::Scan Successes"
           gh --limit 1000 run list --repo $GITHUB_REPOSITORY --json databaseId,name,conclusion \
             --jq '.[] | select(.name=="Scan" and .conclusion=="success") | .databaseId' | \
             xargs -I '{}' gh run delete --repo $GITHUB_REPOSITORY '{}'
-
+          echo "::endgroup::"
+          echo "::group::Old Build Failures"
           gh --limit 1000 run list --repo ivanjh/venus_kernel_modules --json databaseId,name,conclusion,updatedAt \
             --jq '.[] | select(.name=="Build" and .conclusion=="failure") | select (now-(.updatedAt|fromdate)>60*60*24*3 ) | .databaseId' | \
             xargs -I '{}' gh run delete --repo $GITHUB_REPOSITORY '{}'
+          echo "::endgroup::"
