@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       venus_tag:
-        description: 'Version (tag) to build on github.com/victronenergy/venus'
+        description: "Version (tag) to build on github.com/victronenergy/venus"
         required: true
         type: string
 
@@ -12,24 +12,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - 
-      name: Moving /var/lib/docker to /mnt/docker
-      run: |
-        sudo systemctl stop docker
-        echo '{"data-root": "/mnt/docker"}' | sudo tee /etc/docker/daemon.json
-        sudo mv /var/lib/docker /mnt/docker
-        sudo systemctl start docker
-    -
-      name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    -
-      name: Build and push
-      uses: docker/build-push-action@v6
-      with:
-        push: false
-        tags: user/app:latest
-        build-args: |
-          VENUS_VERSION=${{ github.event.inputs.venus_tag }}
-          GITHUB_REPOSITORY=${{ github.repository }}
-        secrets: |
-          github_token=${{ secrets.GITHUB_TOKEN }}
+      - name: Moving /var/lib/docker to /mnt/docker
+        run: |
+          sudo systemctl stop docker
+          echo '{"data-root": "/mnt/docker"}' | sudo tee /etc/docker/daemon.json
+          sudo mv /var/lib/docker /mnt/docker
+          sudo systemctl start docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: false
+          tags: user/app:latest
+          build-args: |
+            VENUS_VERSION=${{ github.event.inputs.venus_tag }}
+            GITHUB_REPOSITORY=${{ github.repository }}
+          secrets: |
+            github_token=${{ secrets.GITHUB_TOKEN }}
