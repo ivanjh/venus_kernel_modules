@@ -6,7 +6,7 @@ on:
     - cron: "28 2 * * *"
 
 jobs:
-  build:
+  scan:
     permissions:
       actions: write
       contents: write
@@ -21,18 +21,28 @@ jobs:
             echo "Missing branch for source tag $LINE. Triggering build."
             gh workflow --repo $GITHUB_REPOSITORY run build.yml -f venus_tag=$LINE
           done < <(comm -13 \
-            <(git ls-remote --heads https://github.com/$GITHUB_REPOSITORY.git 'refs/heads/v*' | cut -f2 | cut -d/ -f3 | sort) \
-            <(git ls-remote --tags https://github.com/victronenergy/venus.git 'refs/tags/v*' | cut -f2 | cut -d/ -f3 | grep -v 'v[12]\.'|  grep -vF 'v3.61' | sort))
-      - name: Action Run Tidy
+            <(git ls-remote --heads https://github.com/$GITHUB_REPOSITORY.git 'refs/heads/v*' | cut -f2 | cut -d/ -f3 | \
+              sort) \
+            <(git ls-remote --tags https://github.com/victronenergy/venus.git 'refs/tags/v*' | cut -f2 | cut -d/ -f3 | \
+              grep -v '^v[12]\.' |  grep -v '^v3\.61$' | \
+              sort) \
+            )
+
+  tidy:
+    permissions:
+      actions: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tidy Action Runs
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "::group::Scan Successes"
+          echo "::group::Delete Scan Successes"
           gh --limit 1000 run list --repo $GITHUB_REPOSITORY --json databaseId,name,conclusion \
             --jq '.[] | select(.name=="Scan" and .conclusion=="success") | .databaseId' | \
             xargs -I '{}' gh run delete --repo $GITHUB_REPOSITORY '{}'
           echo "::endgroup::"
-          echo "::group::Old Build Failures"
+          echo "::group::Delete Old Build Failures"
           gh --limit 1000 run list --repo ivanjh/venus_kernel_modules --json databaseId,name,conclusion,updatedAt \
             --jq '.[] | select(.name=="Build" and .conclusion=="failure") | select (now-(.updatedAt|fromdate)>60*60*24*3 ) | .databaseId' | \
             xargs -I '{}' gh run delete --repo $GITHUB_REPOSITORY '{}'
