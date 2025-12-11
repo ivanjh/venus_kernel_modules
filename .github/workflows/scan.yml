@@ -24,7 +24,8 @@ jobs:
             <(git ls-remote --heads https://github.com/$GITHUB_REPOSITORY.git 'refs/heads/v*' | cut -f2 | cut -d/ -f3 | \
               sort) \
             <(git ls-remote --tags https://github.com/victronenergy/venus.git 'refs/tags/v*' | cut -f2 | cut -d/ -f3 | \
-              grep -v '^v[12]\.' |  grep -v '^v3\.61$' | \
+              grep -v '^v[12]\.' | # Exclude v1 and v2 (too old)
+              grep -v '^v3\.61$' | # Exclude v3.61 (tag missing in source repos)
               sort) \
             )
 
