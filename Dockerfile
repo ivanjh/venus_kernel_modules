@@ -39,12 +39,18 @@ RUN echo "APT::Get::Assume-Yes \"true\";\nAPT::Get::allow \"true\";" | sudo tee 
 RUN sed -i -e 's/@sudo /@sudo DEBIAN_FRONTEND=noninteractive /g' Makefile
 RUN make prereq
 
-# Patch git-fetch-remote.sh to exit on error
+## Patch git-fetch-remote.sh
+# Exit on error
 RUN sed -i '2i set -e' git-fetch-remote.sh
 
-# Skip set upstream origin branch (we're using tags)
+# Skip set upstream branch (we're fetching from tags)
 RUN sed -i -e '/branch -u "origin/d' git-fetch-remote.sh
 
+# Sparse checkout single branch
+RUN sed -i -e 's/ --no-checkout/ --no-checkout --depth=1 --single-branch --branch "$5"/' git-fetch-remote.sh
+## End  Patch git-fetch-remote.sh
+
+# Fetch repos
 RUN make fetch
 
 # Image build checks for it
