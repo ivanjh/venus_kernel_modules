@@ -77,7 +77,7 @@ RUN >>"$(find sources/meta-victronenergy/meta-bsp/recipes-kernel/linux -name 'li
     comm -23 .desiredModules .existingStatic | sed s/\$/=m/g > .config.nonstaticmod \n\
 \n\
     # Append mod enablement at the end, skipping modules with build issues \n\
-    <.config.nonstaticmod grep -vE "(CONFIG_SERIAL_8250|CONFIG_UBIFS_FS|CONFIG_EXT2_FS|CONFIG_RPMB)" >> .config \n\
+    <.config.nonstaticmod grep -vE "(CONFIG_SERIAL_8250|CONFIG_UBIFS_FS|CONFIG_EXT2_FS|CONFIG_RPMB|CONFIG_KUNIT)" >> .config \n\
 }'
 
 # bitbake requires lz4c pzstd unzstd zstd
