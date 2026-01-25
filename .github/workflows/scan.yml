@@ -25,6 +25,7 @@ jobs:
               sort) \
             <(git ls-remote --tags https://github.com/victronenergy/venus.git 'refs/tags/v*' | cut -f2 | cut -d/ -f3 | \
               grep -v '^v[12]\.' | # Exclude v1 and v2 (too old)
+              grep -v '^v3\.60$' | # Exclude v3.60 (tag missing in https://github.com/victronenergy/meta-lts-mixins/tags)
               grep -v '^v3\.61$' | # Exclude v3.61 (tag missing in https://github.com/victronenergy/meta-lts-mixins-go/tags)
               grep -v '^v3\.65$' | # Exclude v3.65 (tag missing in https://github.com/victronenergy/meta-lts-mixins-go/tags)
               sort) \
